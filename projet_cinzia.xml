@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE nta PUBLIC '-//Uppaal Team//DTD Flat System 1.6//EN' 'http://www.it.uu.se/research/group/darts/uppaal/flat-1_6.dtd'>
+<nta>
+	<declaration>// Place global declarations here.
+chan gen_nonce;
+chan start_encrypt, start_decrypt;
+chan finish_nonce;
+chan finish_encrypt, finish_decrypt;</declaration>
+	<template>
+		<name>Initiator</name>
+		<location id="id0" x="-42" y="-34">
+			<name x="-85" y="-42">SI0</name>
+		</location>
+		<location id="id1" x="102" y="-34">
+			<name x="119" y="-59">SI1</name>
+			<committed/>
+		</location>
+		<location id="id2" x="246" y="-34">
+			<name x="236" y="-68">SI2</name>
+		</location>
+		<location id="id3" x="246" y="93">
+			<name x="221" y="110">DECRYPT</name>
+		</location>
+		<location id="id4" x="-42" y="93">
+			<name x="-68" y="110">ENCRYPT</name>
+		</location>
+		<init ref="id0"/>
+		<transition id="id5">
+			<source ref="id4"/>
+			<target ref="id0"/>
+			<label kind="synchronisation" x="-119" y="8">init_msg!</label>
+			<label kind="assignment" x="-153" y="25">finish:=true,
+msg:=result</label>
+		</transition>
+		<transition id="id6">
+			<source ref="id3"/>
+			<target ref="id4"/>
+			<label kind="assignment" x="17" y="102">param1:=result,
+param2:=init_party</label>
+		</transition>
+		<transition id="id7">
+			<source ref="id2"/>
+			<target ref="id3"/>
+			<label kind="synchronisation" x="255" y="0">init_msg?</label>
+			<label kind="assignment" x="255" y="17">param1:=msg,
+param2:=init_id*10</label>
+		</transition>
+		<transition id="id8">
+			<source ref="id1"/>
+			<target ref="id2"/>
+			<label kind="guard" x="263" y="-51">t&lt;=time_out</label>
+			<label kind="synchronisation" x="119" y="-25">init_msg!</label>
+			<label kind="assignment" x="119" y="-8">t:=0</label>
+		</transition>
+		<transition id="id9">
+			<source ref="id0"/>
+			<target ref="id1"/>
+			<label kind="synchronisation" x="-17" y="-59">start?</label>
+			<label kind="assignment" x="-17" y="-25">msg:=init_id</label>
+		</transition>
+	</template>
+	<template>
+		<name>Cryptographic_Device</name>
+		<declaration>int index=0;
+int param1, param2;
+int result;
+int gennonce=0;
+int seed=12; // valeur arbitraire</declaration>
+		<location id="id10" x="0" y="0">
+		</location>
+		<location id="id11" x="0" y="-187">
+		</location>
+		<location id="id12" x="229" y="0">
+		</location>
+		<location id="id13" x="-272" y="0">
+		</location>
+		<init ref="id10"/>
+		<transition id="id14">
+			<source ref="id12"/>
+			<target ref="id10"/>
+			<label kind="guard" x="42" y="59">param1&lt;max,
+key[param1]*10==param2</label>
+			<label kind="synchronisation" x="42" y="42">finish_decrypt!</label>
+			<label kind="assignment" x="42" y="93">result:=plain[param1]</label>
+			<nail x="229" y="110"/>
+			<nail x="25" y="110"/>
+		</transition>
+		<transition id="id15">
+			<source ref="id13"/>
+			<target ref="id10"/>
+			<label kind="synchronisation" x="-255" y="110">finish_nonce!</label>
+			<nail x="-273" y="110"/>
+			<nail x="-43" y="110"/>
+		</transition>
+		<transition id="id16">
+			<source ref="id10"/>
+			<target ref="id12"/>
+			<label kind="synchronisation" x="34" y="-25">start_decrypt?</label>
+		</transition>
+		<transition id="id17">
+			<source ref="id10"/>
+			<target ref="id13"/>
+			<label kind="synchronisation" x="-263" y="8">gen_nonce?</label>
+			<label kind="assignment" x="-263" y="25">gennonce:=gennonce+seed+param1,
+result:=gennonce</label>
+		</transition>
+		<transition id="id18">
+			<source ref="id11"/>
+			<target ref="id10"/>
+			<label kind="synchronisation" x="-170" y="-93">finish_encrypt!</label>
+			<nail x="-42" y="-76"/>
+		</transition>
+		<transition id="id19">
+			<source ref="id10"/>
+			<target ref="id11"/>
+			<label kind="guard" x="8" y="-136">index&lt;max</label>
+			<label kind="synchronisation" x="8" y="-153">start_encrypt?</label>
+			<label kind="assignment" x="8" y="-119">plain[index]:=param1,
+key[index]:=param2,
+result:=index,
+index:=index+1</label>
+		</transition>
+	</template>
+	<system>// Place template instantiations here.
+Process = Template();
+// List one or more processes to be composed into a system.
+system Process;
+</system>
+	<queries>
+		<query>
+			<formula/>
+			<comment/>
+		</query>
+	</queries>
+</nta>
