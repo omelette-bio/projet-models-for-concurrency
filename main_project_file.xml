@@ -2,9 +2,8 @@
 <!DOCTYPE nta PUBLIC '-//Uppaal Team//DTD Flat System 1.6//EN' 'http://www.it.uu.se/research/group/darts/uppaal/flat-1_6.dtd'>
 <nta>
 	<declaration>// Place global declarations here.
-chan gen_nonce;
 chan start_encrypt, start_decrypt;
-chan finish_nonce;
+chan start_gennonce, finish_gennonce;
 chan finish_encrypt, finish_decrypt;
 
 chan init_msg, resp_msg;
@@ -15,211 +14,443 @@ int result;
 int param;
 int ID, var;
 
-chan call_decrypt, call_encrypt, call_gennonce;</declaration>
+chan call_decrypt, call_encrypt, call_gennonce;
+
+const int AlicePk = 0;
+const int BobPk = 1;
+const int IntruderPk = 2;
+
+int cypher;
+int key;
+int plain;
+
+int init_id, init_party, resp_id, resp_party;
+
+const int time_out = 10;</declaration>
+	<template>
+		<name>Init</name>
+		<location id="id0" x="-425" y="0">
+			<committed/>
+		</location>
+		<location id="id1" x="-238" y="0">
+			<committed/>
+		</location>
+		<location id="id2" x="-42" y="0">
+			<committed/>
+		</location>
+		<location id="id3" x="153" y="0">
+			<committed/>
+		</location>
+		<location id="id4" x="340" y="0">
+			<committed/>
+		</location>
+		<location id="id5" x="459" y="0">
+		</location>
+		<init ref="id0"/>
+		<transition id="id6">
+			<source ref="id4"/>
+			<target ref="id5"/>
+			<label kind="synchronisation" x="374" y="-17">start!</label>
+		</transition>
+		<transition id="id7">
+			<source ref="id3"/>
+			<target ref="id4"/>
+			<label kind="assignment" x="170" y="42">resp_party:=AlicePk</label>
+			<nail x="246" y="42"/>
+		</transition>
+		<transition id="id8">
+			<source ref="id3"/>
+			<target ref="id4"/>
+			<label kind="assignment" x="170" y="-17">resp_party:=BobPk</label>
+		</transition>
+		<transition id="id9">
+			<source ref="id3"/>
+			<target ref="id4"/>
+			<label kind="assignment" x="153" y="-68">resp_party:=IntruderPk</label>
+			<nail x="238" y="-51"/>
+		</transition>
+		<transition id="id10">
+			<source ref="id2"/>
+			<target ref="id3"/>
+			<label kind="assignment" x="-17" y="42">resp_id:=AlicePk</label>
+			<nail x="51" y="42"/>
+		</transition>
+		<transition id="id11">
+			<source ref="id2"/>
+			<target ref="id3"/>
+			<label kind="assignment" x="-25" y="-68">resp_id:=IntruderPk</label>
+			<nail x="51" y="-51"/>
+		</transition>
+		<transition id="id12">
+			<source ref="id2"/>
+			<target ref="id3"/>
+			<label kind="assignment" x="-8" y="-17">resp_id:=BobPk</label>
+		</transition>
+		<transition id="id13">
+			<source ref="id1"/>
+			<target ref="id2"/>
+			<label kind="assignment" x="-221" y="42">init_party:=AlicePk</label>
+			<nail x="-144" y="42"/>
+		</transition>
+		<transition id="id14">
+			<source ref="id1"/>
+			<target ref="id2"/>
+			<label kind="assignment" x="-212" y="-17">init_party:=BobPk</label>
+		</transition>
+		<transition id="id15">
+			<source ref="id1"/>
+			<target ref="id2"/>
+			<label kind="assignment" x="-229" y="-68">init_party:=IntruderPk</label>
+			<nail x="-144" y="-51"/>
+		</transition>
+		<transition id="id16">
+			<source ref="id0"/>
+			<target ref="id1"/>
+			<label kind="assignment" x="-399" y="42">init_id:=AlicePk</label>
+			<nail x="-331" y="42"/>
+		</transition>
+		<transition id="id17">
+			<source ref="id0"/>
+			<target ref="id1"/>
+			<label kind="assignment" x="-416" y="-68">init_id:=IntruderPk</label>
+			<nail x="-331" y="-51"/>
+		</transition>
+		<transition id="id18">
+			<source ref="id0"/>
+			<target ref="id1"/>
+			<label kind="assignment" x="-391" y="-17">init_id:=BobPk</label>
+		</transition>
+	</template>
+	<template>
+		<name>Responder</name>
+		<declaration>int claimed_id;</declaration>
+		<location id="id19" x="-357" y="-102">
+		</location>
+		<location id="id20" x="-229" y="-102">
+			<name x="-239" y="-136">SR1</name>
+			<label kind="invariant" x="-272" y="-85">t&lt;=time_out</label>
+		</location>
+		<location id="id21" x="-102" y="-102">
+			<name x="-112" y="-136">SR2</name>
+			<committed/>
+		</location>
+		<location id="id22" x="110" y="-102">
+			<name x="77" y="-136">GEN_NONCE</name>
+		</location>
+		<location id="id23" x="331" y="-102">
+			<name x="321" y="-136">SR3</name>
+			<committed/>
+		</location>
+		<location id="id24" x="289" y="25">
+			<name x="263" y="42">ENCRYPT</name>
+		</location>
+		<location id="id25" x="68" y="25">
+			<name x="77" y="34">SR4</name>
+			<committed/>
+		</location>
+		<location id="id26" x="-170" y="25">
+			<name x="-204" y="34">SR5</name>
+			<label kind="invariant" x="-229" y="51">t&lt;=time_out</label>
+		</location>
+		<location id="id27" x="-399" y="17">
+		</location>
+		<location id="id28" x="-289" y="59">
+			<committed/>
+		</location>
+		<init ref="id19"/>
+		<transition id="id29">
+			<source ref="id28"/>
+			<target ref="id27"/>
+			<label kind="synchronisation" x="-442" y="42">start_encrypt!</label>
+		</transition>
+		<transition id="id30">
+			<source ref="id26"/>
+			<target ref="id28"/>
+			<label kind="synchronisation" x="-289" y="-34">resp_msg?</label>
+			<label kind="assignment" x="-323" y="-17">param1:=result
+param2:=resp_id*10</label>
+		</transition>
+		<transition id="id31">
+			<source ref="id27"/>
+			<target ref="id19"/>
+			<label kind="guard" x="-518" y="-68">challenge==result</label>
+			<label kind="assignment" x="-484" y="-51">finish:=true</label>
+		</transition>
+		<transition id="id32" controllable="false">
+			<source ref="id26"/>
+			<target ref="id23"/>
+			<label kind="guard" x="-102" y="51">t&gt;=time_out</label>
+			<nail x="-102" y="68"/>
+			<nail x="365" y="68"/>
+			<nail x="365" y="-102"/>
+		</transition>
+		<transition id="id33" controllable="false">
+			<source ref="id26"/>
+			<target ref="id21"/>
+			<label kind="guard" x="-170" y="-42">t&gt;=time_out</label>
+			<nail x="-170" y="-42"/>
+		</transition>
+		<transition id="id34">
+			<source ref="id25"/>
+			<target ref="id26"/>
+			<label kind="synchronisation" x="-119" y="-8">resp_msg!</label>
+			<label kind="assignment" x="-119" y="8">t:=0</label>
+		</transition>
+		<transition id="id35">
+			<source ref="id24"/>
+			<target ref="id25"/>
+			<label kind="synchronisation" x="119" y="8">finish_encrypt?</label>
+			<label kind="assignment" x="136" y="25">msg:=result</label>
+		</transition>
+		<transition id="id36">
+			<source ref="id23"/>
+			<target ref="id24"/>
+			<label kind="synchronisation" x="212" y="-68">start_encrypt!</label>
+			<label kind="assignment" x="178" y="-51">param1:=na,
+param2:=claimed_id</label>
+			<nail x="331" y="25"/>
+		</transition>
+		<transition id="id37">
+			<source ref="id22"/>
+			<target ref="id23"/>
+			<label kind="synchronisation" x="161" y="-119">finish_gennonce?</label>
+			<label kind="assignment" x="161" y="-102">na:=result</label>
+		</transition>
+		<transition id="id38">
+			<source ref="id21"/>
+			<target ref="id22"/>
+			<label kind="synchronisation" x="-84" y="-119">start_gennonce!</label>
+			<label kind="assignment" x="-85" y="-93">claimed_id:=msg,
+param1:=resp_id</label>
+		</transition>
+		<transition id="id39">
+			<source ref="id20"/>
+			<target ref="id21"/>
+			<label kind="synchronisation" x="-204" y="-127">resp_msg?</label>
+		</transition>
+		<transition id="id40">
+			<source ref="id19"/>
+			<target ref="id20"/>
+			<label kind="synchronisation" x="-323" y="-127">start?</label>
+		</transition>
+	</template>
 	<template>
 		<name>Intruder</name>
-		<location id="id0" x="-1139" y="-8">
+		<declaration>int pk;</declaration>
+		<location id="id41" x="-1139" y="-8">
 		</location>
-		<location id="id1" x="-1028" y="-42">
+		<location id="id42" x="-1028" y="-42">
 			<name x="-1045" y="-76">SINT1</name>
 			<committed/>
 		</location>
-		<location id="id2" x="-901" y="-8">
+		<location id="id43" x="-901" y="-8">
 			<name x="-961" y="-17">SINT3</name>
 			<committed/>
 		</location>
-		<location id="id3" x="-1028" y="25">
+		<location id="id44" x="-1028" y="25">
 			<name x="-1020" y="0">SINT2</name>
 		</location>
-		<location id="id4" x="-790" y="-161">
-			<name x="-850" y="-153">SINT4</name>
+		<location id="id45" x="-790" y="-187">
+			<name x="-850" y="-179">SINT4</name>
 			<committed/>
 		</location>
-		<location id="id5" x="-646" y="-161">
+		<location id="id46" x="-646" y="-187">
 			<committed/>
 		</location>
-		<location id="id6" x="-782" y="-59">
-			<name x="-799" y="-93">SINT5</name>
+		<location id="id47" x="-773" y="-68">
+			<name x="-790" y="-102">SINT5</name>
 			<committed/>
 		</location>
-		<location id="id7" x="-629" y="-59">
-			<name x="-654" y="-93">ENCRYPT</name>
+		<location id="id48" x="-569" y="-68">
+			<name x="-594" y="-102">ENCRYPT</name>
+			<label kind="invariant" x="-629" y="-59">t&lt;=time_encrypt</label>
 		</location>
-		<location id="id8" x="-765" y="17">
-			<name x="-782" y="-17">SINT6</name>
+		<location id="id49" x="-773" y="34">
+			<name x="-798" y="0">SINT6</name>
 			<committed/>
 		</location>
-		<location id="id9" x="-629" y="17">
-			<name x="-654" y="-17">DECRYPT</name>
+		<location id="id50" x="-561" y="34">
+			<name x="-586" y="-8">DECRYPT</name>
+			<label kind="invariant" x="-629" y="51">t&lt;=time_decrypt</label>
 		</location>
-		<location id="id10" x="-782" y="93">
-			<name x="-799" y="59">SINT7</name>
+		<location id="id51" x="-773" y="144">
+			<name x="-790" y="110">SINT7</name>
 			<committed/>
 		</location>
-		<location id="id11" x="-629" y="93">
-			<name x="-663" y="59">GEN_NONCE</name>
+		<location id="id52" x="-578" y="144">
+			<name x="-612" y="110">GEN_NONCE</name>
+			<label kind="invariant" x="-620" y="153">t&lt;=time_gennonce</label>
 		</location>
-		<location id="id12" x="-484" y="17">
+		<location id="id53" x="-314" y="34">
 			<committed/>
 		</location>
-		<init ref="id0"/>
-		<transition id="id13">
-			<source ref="id12"/>
-			<target ref="id2"/>
-			<label kind="assignment" x="-595" y="93">data:=result,
+		<init ref="id41"/>
+		<transition id="id54">
+			<source ref="id53"/>
+			<target ref="id43"/>
+			<label kind="assignment" x="-1011" y="153">data:=result,
 flag:=true</label>
-			<nail x="-484" y="136"/>
-			<nail x="-901" y="136"/>
+			<nail x="-314" y="195"/>
+			<nail x="-901" y="195"/>
 		</transition>
-		<transition id="id14">
-			<source ref="id11"/>
-			<target ref="id12"/>
-			<label kind="synchronisation" x="-603" y="76">call_gennonce?</label>
-			<nail x="-527" y="76"/>
+		<transition id="id55">
+			<source ref="id52"/>
+			<target ref="id53"/>
+			<label kind="guard" x="-484" y="144">t&gt;=time_gennonce</label>
+			<label kind="synchronisation" x="-501" y="119">call_gennonce?</label>
+			<label kind="assignment" x="-484" y="161">var:=result</label>
+			<nail x="-331" y="144"/>
 		</transition>
-		<transition id="id15">
-			<source ref="id7"/>
-			<target ref="id12"/>
-			<label kind="synchronisation" x="-611" y="-76">call_encrypt?</label>
-			<nail x="-484" y="-59"/>
+		<transition id="id56">
+			<source ref="id48"/>
+			<target ref="id53"/>
+			<label kind="guard" x="-450" y="-68">t&gt;=time_encrypt</label>
+			<label kind="synchronisation" x="-527" y="-93">finish_encrypt?</label>
+			<label kind="assignment" x="-425" y="-51">var:=result</label>
+			<nail x="-314" y="-68"/>
 		</transition>
-		<transition id="id16">
-			<source ref="id9"/>
-			<target ref="id12"/>
-			<label kind="synchronisation" x="-611" y="0">call_decrypt?</label>
+		<transition id="id57">
+			<source ref="id50"/>
+			<target ref="id53"/>
+			<label kind="guard" x="-501" y="34">t&gt;=time_decrypt</label>
+			<label kind="synchronisation" x="-518" y="8">finish_decrypt?</label>
+			<label kind="assignment" x="-501" y="51">var:=result</label>
 		</transition>
-		<transition id="id17">
-			<source ref="id10"/>
-			<target ref="id11"/>
-			<label kind="synchronisation" x="-764" y="76">call_gennonce!</label>
-			<label kind="assignment" x="-773" y="102">param1:=IntruderPk</label>
+		<transition id="id58">
+			<source ref="id51"/>
+			<target ref="id52"/>
+			<label kind="synchronisation" x="-756" y="119">call_gennonce!</label>
+			<label kind="assignment" x="-756" y="144">t:=0,
+param1:=IntruderPk</label>
 		</transition>
-		<transition id="id18">
-			<source ref="id2"/>
-			<target ref="id10"/>
-			<label kind="guard" x="-867" y="42">i&lt;max_op</label>
-			<label kind="assignment" x="-867" y="59">i:=i+1</label>
-			<nail x="-858" y="93"/>
+		<transition id="id59">
+			<source ref="id43"/>
+			<target ref="id51"/>
+			<label kind="guard" x="-867" y="59">i&lt;max_op</label>
+			<label kind="assignment" x="-867" y="76">i:=i+1</label>
+			<nail x="-858" y="110"/>
 		</transition>
-		<transition id="id19">
-			<source ref="id8"/>
-			<target ref="id9"/>
-			<label kind="synchronisation" x="-747" y="0">call_decrypt!</label>
-			<label kind="assignment" x="-747" y="17">param1:=data,
+		<transition id="id60">
+			<source ref="id49"/>
+			<target ref="id50"/>
+			<label kind="synchronisation" x="-748" y="8">start_decrypt!</label>
+			<label kind="assignment" x="-748" y="34">t:=0,
+param1:=data,
 param2:=IntruderPk</label>
 		</transition>
-		<transition id="id20">
-			<source ref="id2"/>
-			<target ref="id8"/>
-			<label kind="guard" x="-858" y="-25">i&lt;max_op,
+		<transition id="id61">
+			<source ref="id43"/>
+			<target ref="id49"/>
+			<label kind="guard" x="-858" y="-17">i&lt;max_op,
 data&lt;100</label>
-			<label kind="assignment" x="-858" y="17">i:=i+1</label>
+			<label kind="assignment" x="-858" y="25">i:=i+1</label>
 			<nail x="-867" y="17"/>
 		</transition>
-		<transition id="id21">
-			<source ref="id6"/>
-			<target ref="id7"/>
-			<label kind="synchronisation" x="-764" y="-76">call_encrypt!</label>
-			<label kind="assignment" x="-765" y="-59">param1:=data,
+		<transition id="id62">
+			<source ref="id47"/>
+			<target ref="id48"/>
+			<label kind="synchronisation" x="-748" y="-93">start_encrypt!</label>
+			<label kind="assignment" x="-748" y="-68">t:=0,
+param1:=data,
 param2:=pk</label>
 		</transition>
-		<transition id="id22">
-			<source ref="id2"/>
-			<target ref="id6"/>
+		<transition id="id63">
+			<source ref="id43"/>
+			<target ref="id47"/>
 			<label kind="guard" x="-875" y="-68">i&lt;max_op</label>
 			<label kind="assignment" x="-875" y="-51">i:=i+1</label>
 		</transition>
-		<transition id="id23">
-			<source ref="id5"/>
-			<target ref="id2"/>
-			<label kind="assignment" x="-603" y="-144">data:=pk,
+		<transition id="id64">
+			<source ref="id46"/>
+			<target ref="id43"/>
+			<label kind="assignment" x="-603" y="-170">data:=pk,
 flag:=false</label>
-			<nail x="-612" y="-161"/>
-			<nail x="-612" y="-102"/>
-			<nail x="-850" y="-102"/>
+			<nail x="-612" y="-187"/>
+			<nail x="-612" y="-128"/>
+			<nail x="-850" y="-128"/>
 		</transition>
-		<transition id="id24">
-			<source ref="id5"/>
-			<target ref="id2"/>
-			<label kind="assignment" x="-748" y="-102">flag:=false</label>
-			<nail x="-646" y="-110"/>
-			<nail x="-875" y="-110"/>
+		<transition id="id65">
+			<source ref="id46"/>
+			<target ref="id43"/>
+			<label kind="assignment" x="-756" y="-127">flag:=false</label>
+			<nail x="-646" y="-136"/>
+			<nail x="-875" y="-136"/>
 		</transition>
-		<transition id="id25">
-			<source ref="id4"/>
-			<target ref="id5"/>
-			<label kind="assignment" x="-782" y="-144">pk:=IntruderPk</label>
-			<nail x="-790" y="-127"/>
-			<nail x="-663" y="-127"/>
+		<transition id="id66">
+			<source ref="id45"/>
+			<target ref="id46"/>
+			<label kind="assignment" x="-782" y="-170">pk:=IntruderPk</label>
+			<nail x="-790" y="-153"/>
+			<nail x="-663" y="-153"/>
 		</transition>
-		<transition id="id26">
-			<source ref="id4"/>
-			<target ref="id5"/>
-			<label kind="assignment" x="-773" y="-212">pk:=AlicePk</label>
-			<nail x="-790" y="-195"/>
-			<nail x="-646" y="-195"/>
+		<transition id="id67">
+			<source ref="id45"/>
+			<target ref="id46"/>
+			<label kind="assignment" x="-773" y="-238">pk:=AlicePk</label>
+			<nail x="-790" y="-221"/>
+			<nail x="-646" y="-221"/>
 		</transition>
-		<transition id="id27">
-			<source ref="id4"/>
-			<target ref="id5"/>
-			<label kind="assignment" x="-773" y="-178">pk:=BobPk</label>
+		<transition id="id68">
+			<source ref="id45"/>
+			<target ref="id46"/>
+			<label kind="assignment" x="-773" y="-204">pk:=BobPk</label>
 		</transition>
-		<transition id="id28">
-			<source ref="id2"/>
-			<target ref="id4"/>
-			<label kind="guard" x="-901" y="-204">flag==true,
+		<transition id="id69">
+			<source ref="id43"/>
+			<target ref="id45"/>
+			<label kind="guard" x="-901" y="-230">flag==true,
 i&lt;max_op</label>
-			<label kind="assignment" x="-892" y="-136">i:=i+1</label>
-			<nail x="-901" y="-161"/>
+			<label kind="assignment" x="-892" y="-162">i:=i+1</label>
+			<nail x="-901" y="-187"/>
 		</transition>
-		<transition id="id29">
-			<source ref="id0"/>
-			<target ref="id3"/>
+		<transition id="id70">
+			<source ref="id41"/>
+			<target ref="id44"/>
 			<nail x="-1156" y="17"/>
 			<nail x="-1156" y="85"/>
 			<nail x="-994" y="85"/>
 		</transition>
-		<transition id="id30">
-			<source ref="id3"/>
-			<target ref="id0"/>
+		<transition id="id71">
+			<source ref="id44"/>
+			<target ref="id41"/>
 			<nail x="-1020" y="68"/>
 			<nail x="-1139" y="68"/>
 		</transition>
-		<transition id="id31">
-			<source ref="id3"/>
-			<target ref="id0"/>
+		<transition id="id72">
+			<source ref="id44"/>
+			<target ref="id41"/>
 			<label kind="synchronisation" x="-1112" y="34">resp_msg!</label>
 			<nail x="-1028" y="51"/>
 			<nail x="-1130" y="51"/>
 		</transition>
-		<transition id="id32">
-			<source ref="id3"/>
-			<target ref="id0"/>
+		<transition id="id73">
+			<source ref="id44"/>
+			<target ref="id41"/>
 			<label kind="synchronisation" x="-1113" y="8">init_msg!</label>
 			<nail x="-1113" y="25"/>
 		</transition>
-		<transition id="id33">
-			<source ref="id2"/>
-			<target ref="id3"/>
+		<transition id="id74">
+			<source ref="id43"/>
+			<target ref="id44"/>
 			<label kind="assignment" x="-1003" y="25">msg:=data</label>
 			<nail x="-943" y="25"/>
 		</transition>
-		<transition id="id34">
-			<source ref="id1"/>
-			<target ref="id2"/>
+		<transition id="id75">
+			<source ref="id42"/>
+			<target ref="id43"/>
 			<label kind="assignment" x="-994" y="-85">data:=msg,
 i:=0</label>
 			<nail x="-943" y="-42"/>
 		</transition>
-		<transition id="id35">
-			<source ref="id0"/>
-			<target ref="id1"/>
+		<transition id="id76">
+			<source ref="id41"/>
+			<target ref="id42"/>
 			<label kind="synchronisation" x="-1122" y="-34">resp_msg?</label>
 			<nail x="-1028" y="-8"/>
 		</transition>
-		<transition id="id36">
-			<source ref="id0"/>
-			<target ref="id1"/>
+		<transition id="id77">
+			<source ref="id41"/>
+			<target ref="id42"/>
 			<label kind="synchronisation" x="-1122" y="-68">init_msg?</label>
 			<nail x="-1130" y="-42"/>
 		</transition>
@@ -227,40 +458,40 @@ i:=0</label>
 	<template>
 		<name>DECRYPT</name>
 		<declaration>const int time_decrypt = 5; // valeur arbitraire</declaration>
-		<location id="id37" x="-212" y="0">
+		<location id="id78" x="-212" y="0">
 			<committed/>
 		</location>
-		<location id="id38" x="17" y="0">
+		<location id="id79" x="17" y="0">
 			<label kind="invariant" x="-42" y="17">t&lt;=time_decrypt</label>
 		</location>
-		<location id="id39" x="246" y="0">
+		<location id="id80" x="246" y="0">
 			<committed/>
 		</location>
-		<location id="id40" x="-297" y="0">
+		<location id="id81" x="-297" y="0">
 		</location>
-		<location id="id41" x="323" y="0">
+		<location id="id82" x="323" y="0">
 		</location>
-		<init ref="id40"/>
-		<transition id="id42">
-			<source ref="id39"/>
-			<target ref="id41"/>
+		<init ref="id81"/>
+		<transition id="id83">
+			<source ref="id80"/>
+			<target ref="id82"/>
 			<label kind="synchronisation" x="238" y="-34">call_decrypt!</label>
 		</transition>
-		<transition id="id43">
-			<source ref="id40"/>
-			<target ref="id37"/>
+		<transition id="id84">
+			<source ref="id81"/>
+			<target ref="id78"/>
 			<label kind="synchronisation" x="-306" y="-34">call_decrypt?</label>
 		</transition>
-		<transition id="id44">
-			<source ref="id38"/>
-			<target ref="id39"/>
+		<transition id="id85">
+			<source ref="id79"/>
+			<target ref="id80"/>
 			<label kind="guard" x="102" y="8">t&gt;=time_encrypt</label>
 			<label kind="synchronisation" x="102" y="25">finish_decrypt?</label>
 			<label kind="assignment" x="136" y="42">var:=result</label>
 		</transition>
-		<transition id="id45">
-			<source ref="id37"/>
-			<target ref="id38"/>
+		<transition id="id86">
+			<source ref="id78"/>
+			<target ref="id79"/>
 			<label kind="synchronisation" x="-195" y="0">start_decrypt!</label>
 			<label kind="assignment" x="-195" y="17">t:=0,
 param1:=cypher,
@@ -270,40 +501,40 @@ param2:=key</label>
 	<template>
 		<name>ENCRYPT</name>
 		<declaration>const int time_encrypt = 5; // valeur arbitraire</declaration>
-		<location id="id46" x="-425" y="8">
+		<location id="id87" x="-425" y="8">
 			<committed/>
 		</location>
-		<location id="id47" x="-221" y="8">
+		<location id="id88" x="-221" y="8">
 			<label kind="invariant" x="-289" y="25">t&lt;=time_encrypt</label>
 		</location>
-		<location id="id48" x="-17" y="8">
+		<location id="id89" x="-17" y="8">
 			<committed/>
 		</location>
-		<location id="id49" x="-510" y="8">
+		<location id="id90" x="-510" y="8">
 		</location>
-		<location id="id50" x="59" y="8">
+		<location id="id91" x="59" y="8">
 		</location>
-		<init ref="id49"/>
-		<transition id="id51">
-			<source ref="id48"/>
-			<target ref="id50"/>
+		<init ref="id90"/>
+		<transition id="id92">
+			<source ref="id89"/>
+			<target ref="id91"/>
 			<label kind="synchronisation" x="-25" y="-25">call_encrypt!</label>
 		</transition>
-		<transition id="id52">
-			<source ref="id49"/>
-			<target ref="id46"/>
+		<transition id="id93">
+			<source ref="id90"/>
+			<target ref="id87"/>
 			<label kind="synchronisation" x="-510" y="-25">call_encrypt?</label>
 		</transition>
-		<transition id="id53">
-			<source ref="id47"/>
-			<target ref="id48"/>
+		<transition id="id94">
+			<source ref="id88"/>
+			<target ref="id89"/>
 			<label kind="guard" x="-153" y="25">t&gt;=time_encrypt</label>
 			<label kind="synchronisation" x="-153" y="8">finish_encrypt?</label>
 			<label kind="assignment" x="-153" y="42">var:=result</label>
 		</transition>
-		<transition id="id54">
-			<source ref="id46"/>
-			<target ref="id47"/>
+		<transition id="id95">
+			<source ref="id87"/>
+			<target ref="id88"/>
 			<label kind="synchronisation" x="-408" y="8">start_encrypt!</label>
 			<label kind="assignment" x="-408" y="25">t:=0,
 param1:=plain,
@@ -313,40 +544,40 @@ param2:=key</label>
 	<template>
 		<name>GEN_NONCE</name>
 		<declaration>const int time_gennonce = 5; // valeur arbitraire</declaration>
-		<location id="id55" x="-382" y="0">
+		<location id="id96" x="-382" y="0">
 			<committed/>
 		</location>
-		<location id="id56" x="-186" y="0">
+		<location id="id97" x="-186" y="0">
 			<label kind="invariant" x="-255" y="17">t&lt;=time_gennonce</label>
 		</location>
-		<location id="id57" x="51" y="0">
+		<location id="id98" x="51" y="0">
 			<committed/>
 		</location>
-		<location id="id58" x="-467" y="0">
+		<location id="id99" x="-467" y="0">
 		</location>
-		<location id="id59" x="127" y="0">
+		<location id="id100" x="127" y="0">
 		</location>
-		<init ref="id58"/>
-		<transition id="id60">
-			<source ref="id57"/>
-			<target ref="id59"/>
+		<init ref="id99"/>
+		<transition id="id101">
+			<source ref="id98"/>
+			<target ref="id100"/>
 			<label kind="synchronisation" x="42" y="-34">call_genonce!</label>
 		</transition>
-		<transition id="id61">
-			<source ref="id58"/>
-			<target ref="id55"/>
+		<transition id="id102">
+			<source ref="id99"/>
+			<target ref="id96"/>
 			<label kind="synchronisation" x="-484" y="-34">call_gennonce?</label>
 		</transition>
-		<transition id="id62">
-			<source ref="id56"/>
-			<target ref="id57"/>
+		<transition id="id103">
+			<source ref="id97"/>
+			<target ref="id98"/>
 			<label kind="guard" x="-102" y="17">t&gt;=time_gennonce</label>
 			<label kind="synchronisation" x="-102" y="0">finish_nonce?</label>
 			<label kind="assignment" x="-102" y="34">var:=result</label>
 		</transition>
-		<transition id="id63">
-			<source ref="id55"/>
-			<target ref="id56"/>
+		<transition id="id104">
+			<source ref="id96"/>
+			<target ref="id97"/>
 			<label kind="synchronisation" x="-357" y="0">gen_nonce!</label>
 			<label kind="assignment" x="-357" y="17">t:=0, 
 param1:=ID</label>
@@ -354,53 +585,53 @@ param1:=ID</label>
 	</template>
 	<template>
 		<name>Initiator</name>
-		<location id="id64" x="-42" y="-34">
+		<location id="id105" x="-42" y="-34">
 			<name x="-85" y="-42">SI0</name>
 		</location>
-		<location id="id65" x="102" y="-34">
+		<location id="id106" x="102" y="-34">
 			<name x="119" y="-59">SI1</name>
 			<committed/>
 		</location>
-		<location id="id66" x="246" y="-34">
+		<location id="id107" x="246" y="-34">
 			<name x="236" y="-68">SI2</name>
 			<label kind="invariant" x="263" y="-42">t&lt;=time_out</label>
 		</location>
-		<location id="id67" x="246" y="93">
+		<location id="id108" x="246" y="93">
 			<name x="221" y="110">DECRYPT</name>
 		</location>
-		<location id="id68" x="-42" y="93">
+		<location id="id109" x="-42" y="93">
 			<name x="-68" y="110">ENCRYPT</name>
 		</location>
-		<init ref="id64"/>
-		<transition id="id69">
-			<source ref="id68"/>
-			<target ref="id64"/>
+		<init ref="id105"/>
+		<transition id="id110">
+			<source ref="id109"/>
+			<target ref="id105"/>
 			<label kind="synchronisation" x="-119" y="8">init_msg!</label>
 			<label kind="assignment" x="-153" y="25">finish:=true,
 msg:=result</label>
 		</transition>
-		<transition id="id70">
-			<source ref="id67"/>
-			<target ref="id68"/>
+		<transition id="id111">
+			<source ref="id108"/>
+			<target ref="id109"/>
 			<label kind="assignment" x="17" y="102">param1:=result,
 param2:=init_party</label>
 		</transition>
-		<transition id="id71">
-			<source ref="id66"/>
-			<target ref="id67"/>
+		<transition id="id112">
+			<source ref="id107"/>
+			<target ref="id108"/>
 			<label kind="synchronisation" x="255" y="0">init_msg?</label>
 			<label kind="assignment" x="255" y="17">param1:=msg,
 param2:=init_id*10</label>
 		</transition>
-		<transition id="id72">
-			<source ref="id65"/>
-			<target ref="id66"/>
+		<transition id="id113">
+			<source ref="id106"/>
+			<target ref="id107"/>
 			<label kind="synchronisation" x="119" y="-25">init_msg!</label>
 			<label kind="assignment" x="119" y="-8">t:=0</label>
 		</transition>
-		<transition id="id73">
-			<source ref="id64"/>
-			<target ref="id65"/>
+		<transition id="id114">
+			<source ref="id105"/>
+			<target ref="id106"/>
 			<label kind="synchronisation" x="-17" y="-59">start?</label>
 			<label kind="assignment" x="-17" y="-25">msg:=init_id</label>
 		</transition>
@@ -415,18 +646,18 @@ int max=20;
 
 int plain[max];
 int key[max];</declaration>
-		<location id="id74" x="0" y="0">
+		<location id="id115" x="0" y="0">
 		</location>
-		<location id="id75" x="0" y="-187">
+		<location id="id116" x="0" y="-187">
 		</location>
-		<location id="id76" x="229" y="0">
+		<location id="id117" x="229" y="0">
 		</location>
-		<location id="id77" x="-272" y="0">
+		<location id="id118" x="-272" y="0">
 		</location>
-		<init ref="id74"/>
-		<transition id="id78">
-			<source ref="id76"/>
-			<target ref="id74"/>
+		<init ref="id115"/>
+		<transition id="id119">
+			<source ref="id117"/>
+			<target ref="id115"/>
 			<label kind="guard" x="42" y="59">param1&lt;max,
 key[param1]*10==param2</label>
 			<label kind="synchronisation" x="42" y="42">finish_decrypt!</label>
@@ -434,34 +665,34 @@ key[param1]*10==param2</label>
 			<nail x="229" y="110"/>
 			<nail x="25" y="110"/>
 		</transition>
-		<transition id="id79">
-			<source ref="id77"/>
-			<target ref="id74"/>
+		<transition id="id120">
+			<source ref="id118"/>
+			<target ref="id115"/>
 			<label kind="synchronisation" x="-255" y="110">finish_nonce!</label>
 			<nail x="-272" y="110"/>
 			<nail x="-43" y="110"/>
 		</transition>
-		<transition id="id80">
-			<source ref="id74"/>
-			<target ref="id76"/>
+		<transition id="id121">
+			<source ref="id115"/>
+			<target ref="id117"/>
 			<label kind="synchronisation" x="34" y="-25">start_decrypt?</label>
 		</transition>
-		<transition id="id81">
-			<source ref="id74"/>
-			<target ref="id77"/>
+		<transition id="id122">
+			<source ref="id115"/>
+			<target ref="id118"/>
 			<label kind="synchronisation" x="-263" y="8">gen_nonce?</label>
 			<label kind="assignment" x="-263" y="25">gennonce:=gennonce+seed+param1,
 result:=gennonce</label>
 		</transition>
-		<transition id="id82">
-			<source ref="id75"/>
-			<target ref="id74"/>
+		<transition id="id123">
+			<source ref="id116"/>
+			<target ref="id115"/>
 			<label kind="synchronisation" x="-170" y="-93">finish_encrypt!</label>
 			<nail x="-42" y="-76"/>
 		</transition>
-		<transition id="id83">
-			<source ref="id74"/>
-			<target ref="id75"/>
+		<transition id="id124">
+			<source ref="id115"/>
+			<target ref="id116"/>
 			<label kind="guard" x="8" y="-136">index&lt;max</label>
 			<label kind="synchronisation" x="8" y="-153">start_encrypt?</label>
 			<label kind="assignment" x="8" y="-119">plain[index]:=param1,
@@ -470,10 +701,10 @@ result:=index,
 index:=index+1</label>
 		</transition>
 	</template>
-	<system>process encrypt0 = ENCRYPT();
-process decrypt0 = DECRYPT();
-process gennonce0 = GEN_NONCE();
-</system>
+	<system>process pInitiator = Initiator();
+process pIntruder = Intruder();
+process pInit = Init();
+process pResponder = Responder();</system>
 	<queries>
 		<query>
 			<formula/>
